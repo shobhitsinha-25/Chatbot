@@ -1,36 +1,48 @@
 from langgraph.graph import StateGraph, START, END
 from typing import TypedDict, Annotated
-from langchain_core.messages import BaseMessage
-from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+from langchain_core.messages import BaseMessage, AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.message import add_messages
-from dotenv import load_dotenv
-
-load_dotenv()
+from huggingface_hub import InferenceClient
+import streamlit as st
 
 # ---------------- STATE ----------------
 class ChatState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
 
-# ---------------- HF MODEL ----------------
-llm = HuggingFaceEndpoint(
-    repo_id="google/gemma-2b-it",
-    task="text-generation",
-    max_new_tokens=256,
-    temperature=0.3,
-    top_p=0.95,
-    provider="hf-inference"   
-)
+# ---------------- HF TOKEN ----------------
+HF_TOKEN = st.secrets["HUGGINGFACEHUB_API_TOKEN"]
 
-model = ChatHuggingFace(llm=llm)
+# ---------------- SMALL MODEL ----------------
+client = InferenceClient(
+    model="google/gemma-2b-it",
+    token=HF_TOKEN
+)
 
 # ---------------- NODE ----------------
 def chat_node(state: ChatState):
 
     messages = state['messages']
-    response = model.invoke(messages)
 
-    return {'messages': [response]}
+    prompt = ""
+
+    for msg in messages:
+        if msg.type == "human":
+            prompt += f"User: {msg.content}\n"
+        elif msg.type == "ai":
+            prompt += f"Assistant: {msg.content}\n"
+
+    prompt += "Assistant:"
+
+    response = client.text_generation(
+        prompt,
+        max_new_tokens=256,
+        temperature=0.3
+    )
+
+    return {
+        "messages": [AIMessage(content=response)]
+    }
 
 # ---------------- GRAPH ----------------
 graph = StateGraph(ChatState)
