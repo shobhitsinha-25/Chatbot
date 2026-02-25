@@ -14,7 +14,7 @@ class ChatState(TypedDict):
 
 # ---------------- HF MODEL ----------------
 llm = HuggingFaceEndpoint(
-    repo_id="HuggingFaceH4/zephyr-7b-beta",
+    repo_id="google/gemma-2b-it",
     task="text-generation",
     max_new_tokens=512,
     temperature=0.3,
