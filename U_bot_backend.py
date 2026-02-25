@@ -16,10 +16,10 @@ class ChatState(TypedDict):
 llm = HuggingFaceEndpoint(
     repo_id="google/gemma-2b-it",
     task="text-generation",
-    max_new_tokens=512,
+    max_new_tokens=256,
     temperature=0.3,
     top_p=0.95,
-    repetition_penalty=1.03
+    provider="hf-inference"   
 )
 
 model = ChatHuggingFace(llm=llm)
